@@ -50,7 +50,7 @@ jobs:
             const reel = fs.existsSync(`${dir}/reel.mp4`) ? `\n\n🎬 **릴스 미리보기**: [reel.mp4 보기](${base}/reel.mp4) (카드와 함께 자동 게시됨)` : '';
             await github.rest.issues.create({
               ...context.repo,
-              title: `[발행 예정] ${post.series} ${post.issueNo} — 오늘 10:00 자동 게시`,
+              title: `[승인 대기] ${post.series} ${post.issueNo} — 승인 댓글 시 자동 게시`,
               labels: ['publish-queue'],
-              body: `오늘 10:00(KST)에 자동 게시됩니다.\n\n**거부하려면 이 이슈에 \`stop\` 이라고 댓글을 남기세요.**\n\n${imgs}${reel}\n\n---\n**캡션**\n\`\`\`\n${caption}\n\`\`\``
+              body: `**승인제 발행** — 이 이슈에 \`승인\` 이라고 댓글을 달면 다음 확인 시각(10·12·15·18시 KST)에 자동 게시됩니다. 승인이 없으면 게시되지 않습니다. 반려하려면 \`stop\` 댓글.\n\n${imgs}${reel}\n\n---\n**캡션**\n\`\`\`\n${caption}\n\`\`\``
             });
