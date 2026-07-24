@@ -46,8 +46,18 @@ jobs:
             const base = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/main/${dir}`;
             try {
               execSync(`IMG_BASE_URL="${base}" node publish_carousel.js "${dir}"`, { stdio: 'inherit', env: { ...process.env, IMG_BASE_URL: base } });
+              // 릴스 게시 (있으면) — 실패해도 캐러셀 성공은 유지
+              let reelNote = '';
+              if (fs.existsSync(`${dir}/reel.mp4`)) {
+                try {
+                  execSync(`node publish_reel.js "${dir}"`, { stdio: 'inherit', env: { ...process.env, IMG_BASE_URL: base } });
+                  reelNote = ' + 릴스 게시 완료 🎬';
+                } catch (re) {
+                  reelNote = `\n⚠️ 릴스 게시는 실패 — 카드 게시는 성공. \`${re.message}\``;
+                }
+              }
               if (queueIssue) {
-                await github.rest.issues.createComment({ ...context.repo, issue_number: queueIssue.number, body: '✅ 인스타그램 게시 완료' });
+                await github.rest.issues.createComment({ ...context.repo, issue_number: queueIssue.number, body: `✅ 인스타그램 게시 완료${reelNote}` });
                 await github.rest.issues.update({ ...context.repo, issue_number: queueIssue.number, state: 'closed' });
               }
             } catch (e) {

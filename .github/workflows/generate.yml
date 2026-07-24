@@ -26,6 +26,10 @@ jobs:
           POST_DIR=$(cat .last_post_dir)
           CHROME_BIN=$(which google-chrome) node make_cards.js "$POST_DIR/post.json" "$POST_DIR"
           rm -f "$POST_DIR"/card*.html
+      - name: 릴스 렌더링
+        run: |
+          POST_DIR=$(cat .last_post_dir)
+          CHROME_BIN=$(which google-chrome) node make_reel.js "$POST_DIR/post.json" "$POST_DIR"
       - name: 커밋
         run: |
           git config user.name "mollae-bot"
@@ -42,9 +46,10 @@ jobs:
             const cards = fs.readdirSync(dir).filter(f=>/^card\d+\.png$/.test(f)).sort();
             const imgs = cards.map(c=>`![${c}](${base}/${c})`).join('\n');
             const caption = fs.readFileSync(`${dir}/caption.txt`,'utf8');
+            const reel = fs.existsSync(`${dir}/reel.mp4`) ? `\n\n🎬 **릴스 미리보기**: [reel.mp4 보기](${base}/reel.mp4) (카드와 함께 자동 게시됨)` : '';
             await github.rest.issues.create({
               ...context.repo,
               title: `[발행 예정] ${post.series} ${post.issueNo} — 오늘 10:00 자동 게시`,
               labels: ['publish-queue'],
-              body: `오늘 10:00(KST)에 자동 게시됩니다.\n\n**거부하려면 이 이슈에 \`stop\` 이라고 댓글을 남기세요.**\n\n${imgs}\n\n---\n**캡션**\n\`\`\`\n${caption}\n\`\`\``
+              body: `오늘 10:00(KST)에 자동 게시됩니다.\n\n**거부하려면 이 이슈에 \`stop\` 이라고 댓글을 남기세요.**\n\n${imgs}${reel}\n\n---\n**캡션**\n\`\`\`\n${caption}\n\`\`\``
             });
