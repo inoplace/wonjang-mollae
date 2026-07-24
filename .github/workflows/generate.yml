@@ -30,6 +30,7 @@ jobs:
         run: |
           POST_DIR=$(cat .last_post_dir)
           CHROME_BIN=$(which google-chrome) node make_reel.js "$POST_DIR/post.json" "$POST_DIR"
+          rm -f "$POST_DIR"/frame*.png
       - name: 커밋
         run: |
           git config user.name "mollae-bot"
