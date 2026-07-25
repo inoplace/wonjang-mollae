@@ -1,7 +1,7 @@
-name: 자동 게시 (승인제 — 월수금 10/12/15/18시 승인 확인)
+name: 자동 게시 (월수금 10:00 — stop 없으면 무인 발행)
 on:
   schedule:
-    - cron: '0 1,3,6,9 * * 1,3,5'   # 월/수/금 10:00·12:00·15:00·18:00 KST에 승인 여부 확인
+    - cron: '0 1 * * 1,3,5'   # 월/수/금 10:00 KST 무인 발행
   workflow_dispatch: {}
 
 permissions:
@@ -40,13 +40,12 @@ jobs:
               await github.rest.issues.update({ ...context.repo, issue_number: queueIssue.number, state: 'closed' });
               return;
             }
-            // 승인 없으면 게시하지 않음 (다음 확인 시각까지 대기)
-            const approved = comments.data.some(c => /승인|\bgo\b|\bok\b|👍/i.test(c.body));
-            if (!approved) { core.info('아직 승인 없음 — 게시 대기 (승인제)'); return; }
-            // 승인됨 → Graph API 게시
+            // 무승인 모드 — stop만 없으면 바로 게시
             const base = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/main/${dir}`;
+            let published = false;
             try {
               execSync(`IMG_BASE_URL="${base}" node publish_carousel.js "${dir}"`, { stdio: 'inherit', env: { ...process.env, IMG_BASE_URL: base } });
+              published = true;
               // 릴스 게시 (있으면) — 실패해도 캐러셀 성공은 유지
               let reelNote = '';
               if (fs.existsSync(`${dir}/reel.mp4`)) {
@@ -57,9 +56,11 @@ jobs:
                   reelNote = `\n⚠️ 릴스 게시는 실패 — 카드 게시는 성공. \`${re.message}\``;
                 }
               }
-              await github.rest.issues.createComment({ ...context.repo, issue_number: queueIssue.number, body: `✅ 승인 확인 → 인스타그램 게시 완료${reelNote}` });
-              await github.rest.issues.update({ ...context.repo, issue_number: queueIssue.number, state: 'closed' });
+              // 게시 성공 후 이슈 정리 — 댓글/닫기 실패는 게시 실패로 취급하지 않음 (중복 게시 방지가 최우선이라 닫기부터)
+              try { await github.rest.issues.update({ ...context.repo, issue_number: queueIssue.number, state: 'closed' }); } catch (ce) { core.warning(`이슈 닫기 실패: ${ce.message}`); }
+              try { await github.rest.issues.createComment({ ...context.repo, issue_number: queueIssue.number, body: `✅ 인스타그램 자동 게시 완료${reelNote}` }); } catch (ce) { core.warning(`완료 댓글 실패: ${ce.message}`); }
             } catch (e) {
-              await github.rest.issues.createComment({ ...context.repo, issue_number: queueIssue.number, body: `❌ 게시 실패 — IG 토큰 등록/만료 여부를 확인하세요. 다음 확인 시각에 자동 재시도합니다.\n\n\`${e.message}\`` });
+              if (published) { core.warning(`게시는 성공했으나 후처리 오류: ${e.message}`); return; }
+              try { await github.rest.issues.createComment({ ...context.repo, issue_number: queueIssue.number, body: `❌ 게시 실패 — IG 토큰 등록/만료 여부를 확인하세요.\n\n\`${e.message}\`` }); } catch (ce) {}
               throw e;
             }
