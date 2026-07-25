@@ -21,7 +21,7 @@ if (!IG_USER_ID || !IG_ACCESS_TOKEN || !IMG_BASE_URL) {
   console.error('IG_USER_ID / IG_ACCESS_TOKEN / IMG_BASE_URL 이 필요합니다 (.env)');
   process.exit(1);
 }
-const API = 'https://graph.facebook.com/v21.0';
+const API = 'https://graph.instagram.com/v21.0';
 const postDir = process.argv[2];
 if (!postDir || !fs.existsSync(path.join(postDir, 'reel.mp4'))) {
   console.error('포스트 폴더에 reel.mp4가 없습니다'); process.exit(1);
