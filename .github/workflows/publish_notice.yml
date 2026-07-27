@@ -1,0 +1,39 @@
+name: 공지 발행 (몰래제보 이벤트 — 수동 실행 전용)
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  notice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: 한글 폰트 설치
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk fonts-noto-cjk-extra
+      - name: 카드 렌더링
+        run: |
+          CHROME_BIN=$(which google-chrome) node make_cards.js posts/event-jebo/post.json posts/event-jebo
+          rm -f posts/event-jebo/card*.html
+      - name: 카드 커밋 (공개 URL 확보)
+        run: |
+          git config user.name "mollae-bot"
+          git config user.email "actions@github.com"
+          git add posts/event-jebo
+          git diff --cached --quiet || { git commit -m "공지 카드: 몰래제보 이벤트"; git push; }
+          sleep 45
+      - name: 인스타 게시
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IMG_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main/posts/event-jebo
+        run: node publish_carousel.js posts/event-jebo
+      - name: 게시 결과 커밋
+        if: success()
+        run: |
+          git pull --rebase origin main || true
+          git add posts/event-jebo/published.json 2>/dev/null || true
+          git diff --cached --quiet || { git commit -m "공지 게시 결과 (published.json)"; git push; }
