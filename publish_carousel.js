@@ -72,4 +72,13 @@ async function waitReady(containerId, tries = 20) {
   console.log('게시 실행...');
   const { id: mediaId } = await api(`${IG_USER_ID}/media_publish`, { creation_id: carouselId });
   console.log(`✅ 게시 완료: media_id=${mediaId}`);
+  // 게시 검증 신호: permalink 기록 → published.json (알림 세션이 읽음)
+  try {
+    const info = await (await fetch(`${API}/${mediaId}?fields=permalink&access_token=${IG_ACCESS_TOKEN}`)).json();
+    const pubFile = path.join(postDir, 'published.json');
+    const cur = fs.existsSync(pubFile) ? JSON.parse(fs.readFileSync(pubFile, 'utf8')) : {};
+    cur.carousel = { media_id: mediaId, permalink: info.permalink || null, at: new Date().toISOString() };
+    fs.writeFileSync(pubFile, JSON.stringify(cur, null, 2));
+    console.log(`🔗 permalink: ${info.permalink || '(조회 실패)'}`);
+  } catch (pe) { console.warn('permalink 기록 실패:', pe.message); }
 })().catch(e => { console.error('❌ 실패:', e.message); process.exit(1); });
