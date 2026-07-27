@@ -1,7 +1,9 @@
-name: 콘텐츠 생성 (월수금 07:30 KST)
+name: 콘텐츠 생성 (월수금 07:37/08:13/08:43 KST — 재시도 슬롯)
 on:
   schedule:
-    - cron: '30 22 * * 0,2,4'   # 일/화/목 22:30 UTC = 월/수/금 07:30 KST
+    - cron: '37 22 * * 0,2,4'   # 월수금 07:37 KST (1차)
+    - cron: '13 23 * * 0,2,4'   # 월수금 08:13 KST (2차 — 1차 skip 대비)
+    - cron: '43 23 * * 0,2,4'   # 월수금 08:43 KST (3차)
   workflow_dispatch: {}
 
 permissions:
@@ -13,30 +15,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: 오늘자 생성 여부 확인 (중복 방지)
+        id: guard
+        run: |
+          TODAY=$(TZ=Asia/Seoul date +%Y-%m-%d)
+          if [ -d "posts/$TODAY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "오늘자(posts/$TODAY) 이미 생성됨 — 종료"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-node@v4
+        if: steps.guard.outputs.skip == 'false'
         with: { node-version: 20 }
       - name: 한글 폰트 + ffmpeg 설치
+        if: steps.guard.outputs.skip == 'false'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk fonts-noto-cjk-extra ffmpeg
       - name: 콘텐츠 생성 (Claude API)
+        if: steps.guard.outputs.skip == 'false'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node generate.js
       - name: 카드 렌더링
+        if: steps.guard.outputs.skip == 'false'
         run: |
           POST_DIR=$(cat .last_post_dir)
           CHROME_BIN=$(which google-chrome) node make_cards.js "$POST_DIR/post.json" "$POST_DIR"
           rm -f "$POST_DIR"/card*.html
       - name: 릴스 렌더링
+        if: steps.guard.outputs.skip == 'false'
         run: |
           POST_DIR=$(cat .last_post_dir)
           CHROME_BIN=$(which google-chrome) node make_reel.js "$POST_DIR/post.json" "$POST_DIR"
           rm -f "$POST_DIR"/frame*.png
       - name: 커밋
+        if: steps.guard.outputs.skip == 'false'
         run: |
           git config user.name "mollae-bot"
           git config user.email "actions@github.com"
           git add -A && git commit -m "자동 생성: $(cat .last_post_dir)" && git push
       - name: 승인 이슈 생성 (거부권)
+        if: steps.guard.outputs.skip == 'false'
         uses: actions/github-script@v7
         with:
           script: |
