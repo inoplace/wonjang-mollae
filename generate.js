@@ -17,7 +17,7 @@ const guide = fs.readFileSync(path.join(root, 'guide.md'), 'utf8');
 const todo = topics.find(t => t.status === '대기');
 if (!todo) { console.error('대기 주제가 없습니다 — topics.json을 채워주세요'); process.exit(2); }
 
-const today = new Date().toISOString().slice(0, 10);
+const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10); // KST 기준 날짜 (UTC 크론이 한국 새벽에 돌아도 오늘 폴더가 맞도록)
 const outDir = path.join(root, 'posts', today);
 
 const SCHEMA_EXAMPLE = {
