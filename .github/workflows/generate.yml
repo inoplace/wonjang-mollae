@@ -73,3 +73,33 @@ jobs:
               labels: ['publish-queue'],
               body: `**무인 발행** — 오늘 10:00(KST)에 자동 게시됩니다. 멈추려면 그 전에 이 이슈에 \`stop\` 댓글을 남기세요.\n\n${imgs}${reel}\n\n---\n**캡션**\n\`\`\`\n${caption}\n\`\`\``
             });
+
+  # GitHub 크론 미발화 대비: 생성 워크플로우가 직접 10:07 KST까지 대기 후 게시를 트리거
+  trigger-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    concurrency:
+      group: publish-sleeper
+      cancel-in-progress: true
+    steps:
+      - name: 10:07 KST까지 대기 후 publish.yml 디스패치
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          KDATE=$(TZ=Asia/Seoul date +%F)
+          TARGET=$(date -u -d "${KDATE} 01:07:00" +%s)
+          NOW=$(date -u +%s)
+          WAIT=$((TARGET - NOW))
+          if [ "$WAIT" -gt 0 ] && [ "$WAIT" -lt 18000 ]; then
+            echo "게시 시각(10:07 KST)까지 ${WAIT}초 대기"
+            sleep "$WAIT"
+          else
+            echo "대기 없이 즉시 트리거 (WAIT=${WAIT})"
+          fi
+          curl -sf -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/publish.yml/dispatches" \
+            -d '{"ref":"main"}'
+          echo "publish.yml 디스패치 완료"
