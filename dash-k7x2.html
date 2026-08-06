@@ -122,7 +122,7 @@ const $ = id => document.getElementById(id);
 // ── 주제 추가 이슈 프리필
 {
   const body = encodeURIComponent(
-`아래 형식을 채워 그대로 등록하세요. 등롟m��면 자동으로 주제 큐(topics.json)에 추가됩니다.
+`아래 형식을 채워 그대로 등록하세요. 등록하면 자동으로 주제 큐(topics.json)에 추가됩니다.
 
 시리즈: MONEY CUT   (MONEY CUT / DATA CUT / COUNTER CUT 중 하나)
 주제: 여기에 주제 한 줄
@@ -167,7 +167,7 @@ async function j(url){ const r = await fetch(url + (url.includes('?')?'&':'?') +
     $('t-topics-d').textContent = '주 5회 기준 약 ' + (wait.length/5).toFixed(1) + '주분';
     $('topics').innerHTML = wait.map(x =>
       `<div class="topic"><span class="s">${x.series||''} ${x.issueNo||''}</span><span>${x.topic||''}</span></div>`
-    ).join('') || '<div class="sub">대기 주제가 없습니다 — 일요일 밤 자동 보춽 예정</div>';
+    ).join('') || '<div class="sub">대기 주제가 없습니다 — 일요일 밤 자동 보충 예정</div>';
   } catch(e) {}
 
   const today = kstDate();
