@@ -19,10 +19,24 @@
   body { background:var(--page); color:var(--ink1);
     font-family:system-ui,-apple-system,"Segoe UI",sans-serif; padding:16px; }
   .wrap { max-width:880px; margin:0 auto; display:grid; gap:12px; }
-  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:4px 2px; }
-  .brand { font-size:20px; font-weight:800; letter-spacing:-.5px; }
+  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:4px 2px; }
+  .hleft { display:flex; align-items:center; gap:11px; }
+  .logo { width:38px; height:38px; border-radius:11px; background:var(--mint); color:#0a0a0c; font-weight:900; font-size:13px; display:flex; align-items:center; justify-content:center; letter-spacing:-.5px; }
+  .brand { font-size:19px; font-weight:800; letter-spacing:-.5px; line-height:1.15; }
   .brand em { font-style:normal; color:var(--mint); }
-  .brand small { font-size:12px; font-weight:600; color:var(--ink3); margin-left:8px; }
+  .brand .bs { display:block; font-size:11px; font-weight:600; color:var(--ink3); letter-spacing:.2px; }
+  .hbtns { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .hbtns .btn { padding:8px 13px; font-size:12px; }
+  .grid2 { display:grid; grid-template-columns:1.45fr 1fr; gap:12px; align-items:start; }
+  .col { display:grid; gap:12px; }
+  @media (max-width:760px){ .grid2 { grid-template-columns:1fr; } }
+  .sched { display:flex; gap:6px; flex-wrap:wrap; }
+  .day { flex:1; min-width:40px; text-align:center; border:1px solid var(--border); border-radius:10px; padding:8px 2px; font-size:11px; color:var(--ink3); background:var(--surface2); }
+  .day b { display:block; font-size:12px; color:var(--ink2); margin-bottom:3px; }
+  .day.pub { background:var(--mint-dim); border-color:rgba(61,242,182,.35); color:var(--mint); }
+  .day.pub b { color:var(--mint); }
+  .day.now { outline:2px solid var(--mint); outline-offset:1px; }
+  .qnum { color:var(--ink3); font-size:11px; font-weight:700; min-width:14px; text-align:right; }
   .sub { font-size:12px; color:var(--ink3); }
   .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; }
   .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
@@ -77,8 +91,15 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">원장님<em>몰래</em><small>운영 대시보드</small></div>
-    <span class="sub" id="asof">불러오는 중…</span>
+    <div class="hleft">
+      <div class="logo">몰래</div>
+      <div class="brand">원장님<em>몰래</em><span class="bs">운영 대시보드 · <span id="asof">불러오는 중…</span></span></div>
+    </div>
+    <div class="hbtns">
+      <a class="btn primary" id="btn-add" target="_blank" rel="noopener">＋ 주제 추가</a>
+      <a class="btn danger" id="btn-stop" target="_blank" rel="noopener">⛔ 발행 중지</a>
+      <a class="btn" href="https://www.instagram.com/wonjang.mollae/" target="_blank" rel="noopener">인스타 ↗</a>
+    </div>
   </header>
 
   <div class="tiles">
@@ -88,6 +109,8 @@
     <div class="card tile"><div class="k">대기 주제</div><div class="v" id="t-topics">–</div><div class="d" id="t-topics-d"></div></div>
   </div>
 
+  <div class="grid2">
+    <div class="col">
   <div class="card">
     <h2>팔로워 추이 <button class="tgl" id="tgl-tbl">표로 보기</button>
       <span class="seg"><button id="r7">7일</button><button id="rall" class="on">전체</button></span></h2>
@@ -96,33 +119,39 @@
   </div>
 
   <div class="card">
+    <h2>최근 게시물 반응</h2>
+    <table id="media-table"><thead><tr><th>게시일</th><th>형식</th><th class="num">좋아요</th><th class="num">댓글</th><th>링크</th></tr></thead><tbody></tbody></table>
+  </div>
+
+    </div>
+    <div class="col">
+  <div class="card">
     <h2>오늘 콘텐츠</h2>
     <div class="today">
       <img id="today-img" alt="오늘 카드 표지" onerror="this.style.display='none'">
       <div class="info">
         <div class="sub" id="today-note">확인 중…</div>
         <div class="links" id="today-links"></div>
-        <div class="btnrow">
-          <a class="btn danger" id="btn-stop" target="_blank" rel="noopener">⛔ 발행 중지</a>
-          <a class="btn" href="https://github.com/wonjang-mollae/wonjang-mollae.github.io/actions" target="_blank" rel="noopener">실행 로그</a>
-        </div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <h2>최근 게시물 반응</h2>
-    <table id="media-table"><thead><tr><th>게시일</th><th>형식</th><th class="num">좋아요</th><th class="num">댓글</th><th>링크</th></tr></thead><tbody></tbody></table>
+    <h2>발행 스케줄 <span style="margin-left:auto;font-weight:600;color:var(--ink3)">10:07 KST 자동</span></h2>
+    <div class="sched" id="sched"></div>
+    <div class="sub" style="margin-top:10px">멈추고 싶은 날은 아침 <b style="color:var(--ink2)">발행 예고 이슈</b>에 stop 댓글 → 그날 발행 취소</div>
   </div>
-
   <div class="card">
     <h2>주제 큐</h2>
     <div id="topics"></div>
     <div class="btnrow">
-      <a class="btn primary" id="btn-add" target="_blank" rel="noopener">＋ 주제 추가</a>
       <a class="btn" href="https://github.com/wonjang-mollae/wonjang-mollae.github.io/edit/main/topics.json" target="_blank" rel="noopener">직접 편집</a>
+      <a class="btn" href="https://github.com/wonjang-mollae/wonjang-mollae.github.io/actions" target="_blank" rel="noopener">실행 로그</a>
     </div>
     <div class="sub" style="margin-top:10px">주제 추가 → 한글 양식 등록 → 30초 내 자동 반영됩니다. 맨 위 주제가 다음 발행분입니다.</div>
+  </div>
+
+    </div>
   </div>
 
   <div class="foot">
@@ -151,6 +180,13 @@ const rel = iso => { const m = Math.round((Date.now()-new Date(iso))/60000);
 메모: (선택) 참고 링크나 방향`);
   $('btn-add').href = `https://github.com/${REPO}/issues/new?labels=topic-request&title=${encodeURIComponent('[주제추가] ')}&body=${body}`;
 }
+
+const DAYS=['일','월','화','수','목','금','토'];
+{ const dow=(kstNow().getUTCDay());
+  $('sched').innerHTML = DAYS.map((d,i)=>{
+    const pub = i>=1 && i<=5;
+    return `<div class="day ${pub?'pub':''} ${i===dow?'now':''}"><b>${d}</b>${pub?'발행':'–'}</div>`;
+  }).join(''); }
 
 async function j(url){ const r = await fetch(url + (url.includes('?')?'&':'?') + 'v=' + Date.now()); if(!r.ok) throw r.status; return r.json(); }
 let PTS = [], RANGE = 'all';
@@ -195,7 +231,7 @@ let PTS = [], RANGE = 'all';
     $('t-topics-d').textContent = '주 5회 기준 약 ' + (wait.length/5).toFixed(1) + '주분';
     $('topics').innerHTML = wait.map((x,i) => {
       const key = (x.series||'').split(' ')[0];
-      return `<div class="topic ${i===0?'next':''}"><span class="badge b-${key}">${x.series||''} ${x.issueNo||''}</span><span>${x.topic||''}${i===0?'<span class="nextchip">다음 발행</span>':''}</span></div>`;
+      return `<div class="topic ${i===0?'next':''}"><span class="qnum">${i+1}</span><span class="badge b-${key}">${x.series||''} ${x.issueNo||''}</span><span>${x.topic||''}${i===0?'<span class="nextchip">다음 발행</span>':''}</span></div>`;
     }).join('') || '<div class="sub">대기 주제가 없습니다 — 일요일 밤 자동 보충 예정</div>';
   } catch(e) {}
 
